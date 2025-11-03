@@ -46,6 +46,7 @@
         /* Main Content Styles */
         main {
             padding: 3rem 0;
+            min-height: 60vh;
         }
         
         .semester-grid {
@@ -61,6 +62,7 @@
             overflow: hidden;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
         }
         
         .semester-card:hover {
@@ -100,7 +102,7 @@
             border-bottom: none;
         }
         
-        .download-btn {
+        .download-btn, .view-btn {
             background: #4CAF50;
             color: white;
             border: none;
@@ -113,8 +115,58 @@
             display: inline-block;
         }
         
-        .download-btn:hover {
+        .download-btn:hover, .view-btn:hover {
             background: #388E3C;
+        }
+        
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+            margin-bottom: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        
+        /* Chapter List Styles */
+        .chapter-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .chapter-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease;
+        }
+        
+        .chapter-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .chapter-card h3 {
+            color: #2a5298;
+            margin-bottom: 0.5rem;
+        }
+        
+        .chapter-card p {
+            color: #666;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
         }
         
         /* Footer Styles */
@@ -234,6 +286,19 @@
             background: #d32f2f;
         }
         
+        /* Page Title */
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .page-title h2 {
+            color: #2a5298;
+            font-size: 1.8rem;
+        }
+        
         /* Responsive Styles */
         @media (max-width: 768px) {
             .semester-grid {
@@ -247,6 +312,10 @@
             .filter-options {
                 justify-content: center;
             }
+            
+            .chapter-list {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -259,7 +328,7 @@
     </header>
     
     <main class="container">
-        <div class="search-filter">
+        <div class="search-filter" id="searchFilter">
             <input type="text" class="search-box" id="searchInput" placeholder="Search subjects...">
             <div class="filter-options">
                 <button class="filter-btn active" data-semester="all">All Semesters</button>
@@ -272,8 +341,34 @@
             </div>
         </div>
         
-        <div class="semester-grid" id="semesterContainer">
-            <!-- Semester cards will be dynamically generated here -->
+        <div id="semesterView">
+            <div class="semester-grid" id="semesterContainer">
+                <!-- Semester cards will be dynamically generated here -->
+            </div>
+        </div>
+        
+        <div id="subjectView" style="display: none;">
+            <button class="back-btn" id="backToSemesters">
+                <span>←</span> Back to Semesters
+            </button>
+            <div class="page-title">
+                <h2 id="subjectViewTitle">Subjects</h2>
+            </div>
+            <div class="semester-grid" id="subjectContainer">
+                <!-- Subject cards will be dynamically generated here -->
+            </div>
+        </div>
+        
+        <div id="chapterView" style="display: none;">
+            <button class="back-btn" id="backToSubjects">
+                <span>←</span> Back to Subjects
+            </button>
+            <div class="page-title">
+                <h2 id="chapterViewTitle">Chapters</h2>
+            </div>
+            <div class="chapter-list" id="chapterContainer">
+                <!-- Chapter cards will be dynamically generated here -->
+            </div>
         </div>
     </main>
     
@@ -297,74 +392,126 @@
     </div>
 
     <script>
-        // Sample data for BCA semesters with actual PDF URLs
+        // Sample data for BCA semesters with chapters
         const semesterData = [
             {
                 semester: 1,
                 subjects: [
-                    { name: "CPPM", pdfUrl: "https://pokiigames.github.io/Hindi-/CPPM%202025-26.pdf", fileName: "BCA-Sem1-Programming-Fundamentals.pdf" },
-                    { name: "Mathematics I", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem1-Mathematics-I.pdf" },
-                    { name: "Digital Electronics", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem1-Digital-Electronics.pdf" },
-                    { name: "Communication Skills", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem1-Communication-Skills.pdf" },
-                    { name: "Environmental Studies", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem1-Environmental-Studies.pdf" },
-                    { name: "Environmental Studies", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem1-Environmental-Studies.pdf" }
+                    {
+                        name: "Programming Fundamentals",
+                        chapters: [
+                            { name: "Introduction to Programming", pdfUrl: "https://pokiigames.github.io/Hindi-/CPPM%202025-26.pdf", fileName: "BCA-Sem1-Programming-Intro.pdf" },
+                            { name: "Data Types and Variables", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem1-Programming-DataTypes.pdf" },
+                            { name: "Control Structures", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem1-Programming-ControlStructures.pdf" },
+                            { name: "Functions and Modules", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem1-Programming-Functions.pdf" }
+                        ]
+                    },
+                    {
+                        name: "Mathematics I",
+                        chapters: [
+                            { name: "Sets and Relations", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem1-Maths-Sets.pdf" },
+                            { name: "Matrices and Determinants", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem1-Maths-Matrices.pdf" },
+                            { name: "Calculus Basics", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem1-Maths-Calculus.pdf" }
+                        ]
+                    },
+                    {
+                        name: "Digital Electronics",
+                        chapters: [
+                            { name: "Number Systems", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem1-DE-NumberSystems.pdf" },
+                            { name: "Logic Gates", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem1-DE-LogicGates.pdf" },
+                            { name: "Boolean Algebra", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem1-DE-BooleanAlgebra.pdf" }
+                        ]
+                    }
                 ]
             },
             {
                 semester: 2,
                 subjects: [
-                    { name: "Data Structures", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem2-Data-Structures.pdf" },
-                    { name: "Mathematics II", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem2-Mathematics-II.pdf" },
-                    { name: "Computer Organization", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem2-Computer-Organization.pdf" },
-                    { name: "Business Economics", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem2-Business-Economics.pdf" },
-                    { name: "Discrete Mathematics", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem2-Discrete-Mathematics.pdf" }
+                    {
+                        name: "Data Structures",
+                        chapters: [
+                            { name: "Arrays and Linked Lists", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem2-DS-Arrays.pdf" },
+                            { name: "Stacks and Queues", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem2-DS-StacksQueues.pdf" },
+                            { name: "Trees and Graphs", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem2-DS-TreesGraphs.pdf" }
+                        ]
+                    },
+                    {
+                        name: "Mathematics II",
+                        chapters: [
+                            { name: "Probability Theory", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem2-Maths-Probability.pdf" },
+                            { name: "Statistics", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem2-Maths-Statistics.pdf" },
+                            { name: "Linear Programming", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem2-Maths-LinearProgramming.pdf" }
+                        ]
+                    }
                 ]
             },
             {
                 semester: 3,
                 subjects: [
-                    { name: "Object-Oriented Programming", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem3-OOP.pdf" },
-                    { name: "Database Management Systems", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem3-DBMS.pdf" },
-                    { name: "Operating Systems", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem3-Operating-Systems.pdf" },
-                    { name: "Computer Networks", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem3-Computer-Networks.pdf" },
-                    { name: "Software Engineering", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem3-Software-Engineering.pdf" }
+                    {
+                        name: "Object-Oriented Programming",
+                        chapters: [
+                            { name: "OOP Concepts", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem3-OOP-Concepts.pdf" },
+                            { name: "Classes and Objects", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem3-OOP-Classes.pdf" },
+                            { name: "Inheritance and Polymorphism", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem3-OOP-Inheritance.pdf" }
+                        ]
+                    },
+                    {
+                        name: "Database Management Systems",
+                        chapters: [
+                            { name: "Database Concepts", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem3-DBMS-Concepts.pdf" },
+                            { name: "SQL Basics", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem3-DBMS-SQL.pdf" },
+                            { name: "Normalization", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem3-DBMS-Normalization.pdf" }
+                        ]
+                    }
                 ]
             },
             {
                 semester: 4,
                 subjects: [
-                    { name: "Web Technologies", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem4-Web-Technologies.pdf" },
-                    { name: "Java Programming", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem4-Java-Programming.pdf" },
-                    { name: "Computer Graphics", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem4-Computer-Graphics.pdf" },
-                    { name: "Microprocessors", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem4-Microprocessors.pdf" },
-                    { name: "Management Information Systems", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem4-MIS.pdf" }
+                    {
+                        name: "Web Technologies",
+                        chapters: [
+                            { name: "HTML and CSS", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem4-Web-HTML-CSS.pdf" },
+                            { name: "JavaScript Basics", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem4-Web-JavaScript.pdf" },
+                            { name: "PHP and MySQL", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem4-Web-PHP-MySQL.pdf" }
+                        ]
+                    }
                 ]
             },
             {
                 semester: 5,
                 subjects: [
-                    { name: "Python Programming", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem5-Python-Programming.pdf" },
-                    { name: "Mobile Application Development", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem5-Mobile-App-Dev.pdf" },
-                    { name: "Cloud Computing", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem5-Cloud-Computing.pdf" },
-                    { name: "Data Mining", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem5-Data-Mining.pdf" },
-                    { name: "Cyber Security", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem5-Cyber-Security.pdf" }
+                    {
+                        name: "Python Programming",
+                        chapters: [
+                            { name: "Python Basics", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem5-Python-Basics.pdf" },
+                            { name: "Data Structures in Python", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem5-Python-DataStructures.pdf" },
+                            { name: "Python Libraries", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem5-Python-Libraries.pdf" }
+                        ]
+                    }
                 ]
             },
             {
                 semester: 6,
                 subjects: [
-                    { name: "Artificial Intelligence", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem6-AI.pdf" },
-                    { name: "Internet of Things", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem6-IoT.pdf" },
-                    { name: "Big Data Analytics", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem6-Big-Data-Analytics.pdf" },
-                    { name: "Project Work", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem6-Project-Work.pdf" },
-                    { name: "Professional Ethics", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem6-Professional-Ethics.pdf" }
+                    {
+                        name: "Artificial Intelligence",
+                        chapters: [
+                            { name: "AI Introduction", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem6-AI-Introduction.pdf" },
+                            { name: "Machine Learning Basics", pdfUrl: "https://www.africau.edu/images/default/sample.pdf", fileName: "BCA-Sem6-AI-MachineLearning.pdf" },
+                            { name: "Neural Networks", pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", fileName: "BCA-Sem6-AI-NeuralNetworks.pdf" }
+                        ]
+                    }
                 ]
             }
         ];
 
-        // Variables to track current download
+        // Variables to track current download and navigation
         let currentDownloadUrl = '';
         let currentFileName = '';
+        let currentSemester = null;
+        let currentSubject = null;
 
         // Function to render semester cards
         function renderSemesters(semesters = semesterData) {
@@ -381,33 +528,115 @@
                         <h2>Semester ${sem.semester}</h2>
                     </div>
                     <div class="semester-content">
-                        <ul class="subject-list">
-                            ${sem.subjects.map(subject => `
-                                <li>
-                                    <span>${subject.name}</span>
-                                    <a href="#" class="download-btn" data-url="${subject.pdfUrl}" data-filename="${subject.fileName}">Download</a>
-                                </li>
-                            `).join('')}
-                        </ul>
+                        <p><strong>${sem.subjects.length} Subjects</strong></p>
+                        <p>Click to view subjects</p>
                     </div>
                 `;
                 
+                card.addEventListener('click', () => {
+                    showSubjectsView(sem.semester);
+                });
+                
                 container.appendChild(card);
             });
+        }
+
+        // Function to show subjects for a semester
+        function showSubjectsView(semester) {
+            currentSemester = semester;
+            const sem = semesterData.find(s => s.semester === semester);
             
-            // Add event listeners to download buttons
-            document.querySelectorAll('.download-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
+            document.getElementById('semesterView').style.display = 'none';
+            document.getElementById('subjectView').style.display = 'block';
+            document.getElementById('chapterView').style.display = 'none';
+            document.getElementById('searchFilter').style.display = 'none';
+            
+            document.getElementById('subjectViewTitle').textContent = `Semester ${semester} - Subjects`;
+            
+            const container = document.getElementById('subjectContainer');
+            container.innerHTML = '';
+            
+            sem.subjects.forEach(subject => {
+                const card = document.createElement('div');
+                card.className = 'semester-card';
+                
+                card.innerHTML = `
+                    <div class="semester-header">
+                        <h2>${subject.name}</h2>
+                    </div>
+                    <div class="semester-content">
+                        <p><strong>${subject.chapters.length} Chapters</strong></p>
+                        <button class="view-btn">View Chapters</button>
+                    </div>
+                `;
+                
+                card.querySelector('.view-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showChaptersView(semester, subject.name);
+                });
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Function to show chapters for a subject
+        function showChaptersView(semester, subjectName) {
+            currentSubject = subjectName;
+            const sem = semesterData.find(s => s.semester === semester);
+            const subject = sem.subjects.find(s => s.name === subjectName);
+            
+            document.getElementById('semesterView').style.display = 'none';
+            document.getElementById('subjectView').style.display = 'none';
+            document.getElementById('chapterView').style.display = 'block';
+            
+            document.getElementById('chapterViewTitle').textContent = `Semester ${semester} - ${subjectName} - Chapters`;
+            
+            const container = document.getElementById('chapterContainer');
+            container.innerHTML = '';
+            
+            subject.chapters.forEach(chapter => {
+                const card = document.createElement('div');
+                card.className = 'chapter-card';
+                
+                card.innerHTML = `
+                    <h3>${chapter.name}</h3>
+                    <p>Click download to get this chapter PDF</p>
+                    <button class="download-btn" data-url="${chapter.pdfUrl}" data-filename="${chapter.fileName}">Download PDF</button>
+                `;
+                
+                card.querySelector('.download-btn').addEventListener('click', function(e) {
                     e.preventDefault();
                     currentDownloadUrl = this.getAttribute('data-url');
                     currentFileName = this.getAttribute('data-filename');
                     
                     // Show download confirmation modal
                     document.getElementById('modalMessage').textContent = 
-                        `Are you sure you want to download "${this.parentElement.querySelector('span').textContent}"?`;
+                        `Are you sure you want to download "${chapter.name}"?`;
                     document.getElementById('downloadModal').style.display = 'flex';
                 });
+                
+                container.appendChild(card);
             });
+        }
+
+        // Function to go back to semesters view
+        function showSemestersView() {
+            document.getElementById('semesterView').style.display = 'block';
+            document.getElementById('subjectView').style.display = 'none';
+            document.getElementById('chapterView').style.display = 'none';
+            document.getElementById('searchFilter').style.display = 'block';
+            
+            currentSemester = null;
+            currentSubject = null;
+        }
+
+        // Function to go back to subjects view
+        function showSubjectsViewFromChapters() {
+            document.getElementById('semesterView').style.display = 'none';
+            document.getElementById('subjectView').style.display = 'block';
+            document.getElementById('chapterView').style.display = 'none';
+            
+            currentSubject = null;
         }
 
         // Function to filter semesters
@@ -474,6 +703,10 @@
             document.getElementById('searchInput').addEventListener('input', function() {
                 searchSubjects(this.value);
             });
+            
+            // Add event listeners to back buttons
+            document.getElementById('backToSemesters').addEventListener('click', showSemestersView);
+            document.getElementById('backToSubjects').addEventListener('click', showSubjectsViewFromChapters);
             
             // Add event listeners to modal buttons
             document.getElementById('confirmDownload').addEventListener('click', function() {
